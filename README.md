@@ -1,114 +1,115 @@
-# ai-job-search
+<div align="center">
 
-> An end-to-end job application pipeline — discover, rank, tailor, and submit — powered by Claude Code and hardened against the real failure modes of browser automation.
+<h1>🤖 ai-job-search</h1>
 
----
+<p>
+  <strong>An end-to-end job application pipeline — powered by Claude Code.</strong><br>
+  Discover roles, rank them against your profile, generate a tailored LaTeX CV and<br>
+  insight-driven cover letter, then auto-submit via Playwright. You stay in control<br>
+  at every step — three mandatory gates before anything is sent.
+</p>
 
-## What this is
+[![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Powered by Claude Code](https://img.shields.io/badge/Powered%20by-Claude%20Code-D97706)](https://claude.ai/code)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB)](https://python.org)
+[![LaTeX](https://img.shields.io/badge/LaTeX-lualatex%20·%20xelatex-008080)](https://www.latex-project.org/)
 
-A job search automation system that runs entirely inside Claude Code. It discovers fresh postings on LinkedIn and Handshake, scores them against your profile, generates a tailored LaTeX CV and insight-driven cover letter for each role, fills the application form using Playwright, and logs every outcome to a tracker CSV — with mandatory human review at three gates before anything is submitted.
+<img src="claude_animation.gif" alt="Demo" width="700">
 
----
-
-## The pipeline
-
-```
-Phase 1: Discover  →  Phase 2: Rank  →  [GATE 1: approve shortlist]
-  →  Phase 3: Tailor  →  [GATE 2: review CV + cover letter]
-  →  Phase 4: Apply   →  [GATE 3: confirm final submit]
-  →  Phase 5: Track
-```
-
-### Phase 1 — Discover
-Scrapes LinkedIn Jobs and Handshake for postings from the last 24 hours in the SF Bay Area. Deduplicates against `seen_jobs.json` and `job_search_tracker.csv` so the same role is never processed twice. Uses the Claude-in-Chrome MCP with an authenticated session.
-
-### Phase 2 — Rank
-Scores every new posting 0–100 across five dimensions:
-
-| Dimension | Weight |
-|-----------|--------|
-| Sector fit (Investment > GTM/Strategy > Content/AI Research) | 30 |
-| Role fit (day-to-day responsibilities vs. profile) | 30 |
-| AI exposure | 20 |
-| Location (SF/Oakland/Berkeley = full score) | 10 |
-| Salary signal (≥ $60K disclosed = full score) | 10 |
-
-Apply-type bonus: +5 for LinkedIn Easy Apply or Handshake native. −10 for Workday/Oracle (flagged to user; never auto-applied).
-
-### Phase 3 — Tailor
-
-**CV (V2 LaTeX format)**
-Every CV is based on `cv/main_juicebox_gtm_v2.tex` — a BlackRock-style, 1-page, ATS-clean article-class template compiled with `lualatex`. The text layer is verified with `pdftotext -layout` to ensure no icon-glyph artifacts and literal contact info. Candidate contact details are read from `candidate.json` (gitignored).
-
-Rules: 2–3 line summary, 6–8 metric bullets starting with strong action verbs, Skills block at bottom, "familiar with" for non-expert tools, US spelling.
-
-**Cover letter (insight-driven framework)**
-Every letter is anchored to a specific company insight — a product launch, a strategic inflection, a market moment — not a template. The four-section framework runs before any LaTeX is written:
-
-```
-A. Company & Role Insight  →  B. Cover Letter Strategy
-  →  C. Final Letter (3 paragraphs, 1–3 bolded phrases)
-  →  D. Quality Checklist (Alignment · Authenticity · Action)
-```
-
-Compiled with `xelatex` (cover.cls requires fontspec + OpenFonts).
-
-### Phase 4 — Apply
-
-| ATS type | Method |
-|----------|--------|
-| LinkedIn Easy Apply | Claude-in-Chrome MCP |
-| Ashby / Greenhouse / Lever | `apply_ashby.py` (Playwright) |
-| Workday / Oracle | Flagged to user — never auto-applied |
-
-For Ashby and external ATS, a Playwright script (`apply_ashby.py`) fills all fields and uploads the CV using `set_input_files()` — no native file picker dialog, no manual step. Gate 3 is a flag file that Claude writes only after the user types `submit` in chat.
-
-### Phase 5 — Track
-Every outcome is logged to `job_search_tracker.csv` and `seen_jobs.json`. The tracker is the deduplication source for future runs.
+</div>
 
 ---
 
-## What makes it different
+## How it works
 
-**Insight-driven cover letters, not template-filling.**
-Research comes first; the letter argues a specific thesis about why this company, this role, right now. Inspired by [`LaylaLand518/insight-driven-cover-letter-writer`](https://github.com/LaylaLand518/insight-driven-cover-letter-writer).
+```
+Discover → Rank → [GATE 1] → Tailor → [GATE 2] → Apply → [GATE 3] → Track
+```
 
-**ATS-clean LaTeX CVs.**
-V2 article-class template. Clean text layer, correct reading order, literal contact info — verified with `pdftotext -layout`. No moderncv icon artifacts.
+| Phase | What happens |
+|-------|-------------|
+| **1 · Discover** | Scrapes LinkedIn & Handshake for today's postings in your target location |
+| **2 · Rank** | Scores each role 0–100 across sector fit, role fit, AI exposure, location, and salary |
+| **3 · Tailor** | Writes a 1-page ATS-clean LaTeX CV + insight-driven cover letter per role |
+| **4 · Apply** | Fills and submits the ATS form via Playwright or LinkedIn Easy Apply |
+| **5 · Track** | Logs every outcome to `job_search_tracker.csv` for deduplication and review |
 
-**Playwright-based file upload.**
-`set_input_files()` bypasses the native file picker entirely. Solves the read-tier restriction that prevents computer-use tools from interacting with Chrome's file dialog on Windows.
+> [!IMPORTANT]
+> **Three gates you must pass through.** The pipeline pauses after ranking, after tailoring, and before final submit. Nothing moves forward without you typing approval. Gates cannot be skipped.
 
-**Three mandatory human gates.**
-Nothing is submitted without approval. No gate can be skipped.
+---
 
-**Hardened against real-world bugs.**
-Every known failure mode is documented and solved in the skill definition:
+## What's different
+
+### ✦ Insight-driven cover letters — not templates
+
+Every letter starts with live company research: a product launch, a strategic pivot, a market moment. That insight becomes the thesis. No generic openers. No filler.
+
+```
+A. Company & Role Insight  →  B. Strategy  →  C. 3-paragraph letter  →  D. Quality Checklist
+```
+
+Inspired by [`LaylaLand518/insight-driven-cover-letter-writer`](https://github.com/LaylaLand518/insight-driven-cover-letter-writer).
+
+### ✦ ATS-clean LaTeX CVs
+
+V2 article-class template compiled with `lualatex`. Text layer verified with `pdftotext -layout` — no icon-glyph artifacts, literal contact info in the text stream, correct reading order. What ATS parsers actually see.
+
+### ✦ Playwright file upload — no manual steps
+
+`set_input_files()` bypasses Chrome's native file picker entirely. Solves the read-tier restriction on Windows where computer-use tools can screenshot Chrome but can't click into it.
+
+### ✦ Zero personal data hardcoded
+
+Your name, email, phone, and LinkedIn live in `candidate.json` (gitignored). The first run asks for everything interactively and saves it. The skill never stores personal data.
+
+---
+
+## Quick start
+
+**1. Install dependencies**
+
+```bash
+pip install playwright
+python -m playwright install chromium
+```
+
+LaTeX: [MiKTeX](https://miktex.org/) or TeX Live · `pdftotext` (poppler) optional but recommended
+
+**2. Set up your profile**
+
+```bash
+cp candidate.json.template candidate.json
+# fill in your name, email, phone, LinkedIn URL
+# then open CLAUDE.md and fill in your work history, skills, and target sectors
+```
+
+Or skip this step — running `/auto-apply` triggers an interactive Phase 0 that collects everything and writes `candidate.json` for you.
+
+**3. Run**
+
+```
+/auto-apply              # full pipeline — discover, rank, tailor, apply, track
+/auto-apply --dry-run    # Phase 1+2 only: see what's out there before committing
+/auto-apply --from 3     # resume at tailoring with jobs already ranked
+```
+
+---
+
+## Hardened against real-world bugs
+
+Every failure mode hit in production is documented and solved in `.claude/skills/auto-apply/SKILL.md`:
 
 | Bug | Fix |
 |-----|-----|
-| `\uppercase` uppercases LaTeX color names → undefined color | Use `\MakeUppercase` in before-code |
-| lualatex footer shows wrong page count | Run lualatex twice |
-| Cover letter bullet font reverts | Move `itemize` outside `\lettercontent{}` |
-| `file_upload` rejects local paths | Use Playwright `set_input_files()` |
-| Gate file read as `\xef\xbb\xbfsubmit` | Write with `[System.IO.File]::WriteAllText()`, not PowerShell `Out-File` |
+| `\uppercase` in LaTeX titleformat → undefined color `SECTIONBLUE` | Use `\MakeUppercase` in the before-code argument |
+| `lualatex` footer page count wrong on first compile | Always run `lualatex` **twice** |
+| Cover letter bullet font reverts to default | Put `itemize` **outside** `\lettercontent{}`, wrap in Raleway fontspec block |
+| `file_upload` tool rejects local file paths | Use Playwright `set_input_files()` — no dialog involved |
+| Gate file reads as `\xef\xbb\xbfsubmit` ≠ `"submit"` | Write with `[System.IO.File]::WriteAllText()`, never PowerShell `Out-File` |
 | React form fields appear filled but submit empty | Use `nativeInputValueSetter` + `dispatchEvent('input'/'change')` |
 | Radio buttons don't register in React | Click the `<label>` element, not the `<input>` |
-| Playwright `spawn UNKNOWN` on Windows | Script falls back to system Chrome via `executable_path` |
-
----
-
-## Technical stack
-
-| Layer | Tool |
-|-------|------|
-| AI agent | Claude Code (claude-sonnet-4-6) |
-| Browser automation | Claude-in-Chrome MCP + Playwright |
-| CV typesetting | LaTeX (lualatex) · V2 article class |
-| Cover letter | LaTeX (xelatex) · cover.cls · OpenFonts |
-| State | `seen_jobs.json` + `job_search_tracker.csv` |
-| Skill definitions | `.claude/skills/` SKILL.md files |
-| Cross-session memory | `~/.claude/projects/*/memory/` |
+| Playwright `spawn UNKNOWN` on Windows | Script auto-falls back to system Chrome via `executable_path` |
 
 ---
 
@@ -116,71 +117,45 @@ Every known failure mode is documented and solved in the skill definition:
 
 ```
 ai-job-search/
-├── CLAUDE.md                          # Candidate profile template — fill in your own background
-├── candidate.json                     # Contact info (gitignored — never committed)
-├── candidate.json.template            # Copy this to candidate.json and fill in your details
+├── CLAUDE.md                    # Your candidate profile — fill in the placeholders
+├── candidate.json               # Contact info (gitignored — never committed)
+├── candidate.json.template      # Copy this and fill in your details
+├── apply_ashby.py               # Playwright form filler for Ashby / external ATS
 ├── cv/
-│   ├── main_juicebox_gtm_v2.tex       # Canonical V2 template (base all CVs here)
-│   └── main_example.tex               # Master reference (full history)
+│   └── main_juicebox_gtm_v2.tex # Canonical V2 CV template — base all new CVs here
 ├── cover_letters/
-│   ├── cover.cls                      # Custom cover letter class (xelatex)
-│   └── OpenFonts/                     # Lato + Raleway fonts
-├── apply_ashby.py                     # Playwright-based Ashby form filler
-├── job_search_tracker.csv             # Application log
-├── job_scraper/
-│   └── seen_jobs.json                 # Deduplication state
+│   ├── cover.cls                # Custom cover letter class (xelatex + OpenFonts)
+│   └── OpenFonts/               # Lato + Raleway font files
+├── job_search_tracker.csv       # Application log + deduplication source
 └── .claude/skills/
-    ├── auto-apply/SKILL.md            # Full pipeline definition
-    ├── job-application-assistant/     # CV + cover letter tailoring logic
+    ├── auto-apply/SKILL.md      # Full pipeline definition with all bug fixes
+    ├── job-application-assistant/
     └── insight-driven-cover-letter-writer/
 ```
 
 ---
 
-## Setup
+## Stack
 
-**1. Install dependencies**
-```bash
-pip install playwright
-python -m playwright install chromium
-```
-MiKTeX or TeX Live required for LaTeX. `poppler` optional for ATS text extraction (`pdftotext`).
-
-**2. Configure your profile**
-
-Run `/auto-apply` — Phase 0 will ask for your name, email, phone, LinkedIn URL, location, and salary floor, then save them to `candidate.json` (gitignored). Then fill in your full work history and skills in `CLAUDE.md` (placeholders show exactly what's needed). Alternatively:
-
-```bash
-cp candidate.json.template candidate.json
-# fill in your details in candidate.json, then edit CLAUDE.md
-```
-
-**3. Set your CV base template**
-
-Customise `cv/main_juicebox_gtm_v2.tex`. All new CVs are derived from this file.
-
-**4. Run**
-```
-/auto-apply            # full pipeline
-/auto-apply --dry-run  # discover + rank only (no tailoring or submission)
-/auto-apply --from 3   # resume at Phase 3 using already-ranked jobs
-```
+| Layer | Tool |
+|-------|------|
+| AI agent | [Claude Code](https://claude.ai/code) (claude-sonnet) |
+| Browser automation | Claude-in-Chrome MCP · Playwright |
+| CV typesetting | LaTeX · `lualatex` · V2 article class |
+| Cover letter | LaTeX · `xelatex` · `cover.cls` · OpenFonts (Lato + Raleway) |
+| State management | `seen_jobs.json` · `job_search_tracker.csv` |
+| Cross-session memory | `~/.claude/projects/*/memory/` |
 
 ---
 
-## Inspiration & credits
+## Credits
 
-This project was shaped by open work shared generously by others.
+Built on top of **[`MadsLorentzen/ai-job-search`](https://github.com/MadsLorentzen/ai-job-search)** — the original Claude Code job search agent.
 
-**[`LaylaLand518/insight-driven-cover-letter-writer`](https://github.com/LaylaLand518/insight-driven-cover-letter-writer)**
-The cover letter methodology that anchors every letter to a specific company insight. The four-section framework (Company & Role Insight → Strategy → Draft → Quality Checklist) is the backbone of Phase 3's cover letter step.
+Cover letter framework from **[`LaylaLand518/insight-driven-cover-letter-writer`](https://github.com/LaylaLand518/insight-driven-cover-letter-writer)** — anchors every letter to a specific company insight rather than a template.
 
-**[`MadsLorentzen/ai-job-search`](https://github.com/MadsLorentzen/ai-job-search)**
-The original repo this project builds on top of.
-
-**[`anthropics/claude-code`](https://github.com/anthropics/claude-code)**
-The agentic CLI that makes this pipeline possible — skills, memory, MCP tools, LaTeX, Playwright, and Python all orchestrated locally.
+Made possible by **[`anthropics/claude-code`](https://github.com/anthropics/claude-code)** — the agentic CLI that orchestrates skills, memory, MCP tools, LaTeX, Playwright, and Python all in one local session.
 
 ---
 
-*Built with [Claude Code](https://github.com/anthropics/claude-code)*
+<div align="center"><sub>Built with <a href="https://claude.ai/code">Claude Code</a></sub></div>
