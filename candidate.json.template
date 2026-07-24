@@ -1,0 +1,11 @@
+{
+  "name": "Your Full Name",
+  "email": "your@email.com",
+  "phone": "1-XXX-XXX-XXXX",
+  "linkedin": "https://www.linkedin.com/in/your-profile/",
+  "location": "City, State",
+  "location_constraint": "SF/Bay Area only — no relocation",
+  "salary_floor": 60000,
+  "target_sectors": ["Investment", "GTM / Strategy", "Content / AI Research"],
+  "work_authorized": true
+}

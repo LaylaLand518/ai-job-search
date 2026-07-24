@@ -1,0 +1,214 @@
+%% Master CV - Liu Jiaru (Layla)
+%% Comprehensive overview of all competencies, experience, and achievements.
+%% Use as a master reference when tailoring role-specific CVs with /apply.
+%%
+%% Compile with: lualatex main_example.tex
+%% (pdflatex often fails on modern MiKTeX with fontawesome5 font-expansion errors.)
+
+\documentclass[11pt,a4paper,sans]{moderncv}
+\moderncvstyle{banking}
+\moderncvcolor{blue}
+
+% Force both first and last name AND section headings to render in moderncv
+% blue (color1). Default banking on lualatex+MiKTeX leaves these black.
+\renewcommand*{\firstnamestyle}[1]{{\fontsize{34}{36}\bfseries\upshape\color{color1}#1}}
+\renewcommand*{\lastnamestyle}[1]{{\fontsize{34}{36}\bfseries\upshape\color{color1}#1}}
+\renewcommand*{\sectionstyle}[1]{{\sectionfont\color{color1}#1}}
+
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=blue,
+    pdftitle={Liu Jiaru (Layla) - CV},
+    pdfpagemode=FullScreen,
+}
+\usepackage[scale=0.80]{geometry}
+\usepackage{import}
+
+% personal data
+\name{Liu Jiaru}{(Layla)}
+\address{1122 University Ave., Berkeley, CA}{}{}
+\phone[mobile]{(626) 262-0021}
+\email{laylaland888@berkeley.edu}
+\extrainfo{\href{https://linkedin.com/in/[YOUR_LINKEDIN]}{LinkedIn}}
+
+\begin{document}
+
+\makecvtitle
+
+% ============================================================
+%     PROFILE STATEMENT
+% ============================================================
+
+\vspace{6pt}
+\small{AI ecosystem generalist with hands-on experience across investment analysis, go-to-market execution, content systems, and community operations. Authored 20+ AI product analyses reaching 100k+ cumulative reads; conducted healthcare investment diligence across 20+ startups; built operational systems from scratch across content, events, and investor relations. Combines analytical depth with strong written communication and a track record of shipping output in fast-moving, cross-functional environments.}
+
+% ============================================================
+%     CORE COMPETENCIES
+% ============================================================
+
+\section{Core Competencies}
+\vspace{1pt}
+\begin{itemize}
+
+\item \textbf{Investment \& Research:} IC-style investment memos, financial modeling, TAM sizing, comparable-company analysis, diligence briefs, founder interviews, expert calls; familiar with ARR, retention, churn, LTV/CAC, unit economics
+
+\item \textbf{Content \& Editorial:} Content strategy, editorial calendar, content systems design, short-form video, social media management, organic growth; Ahrefs, Google Search Console, Google Analytics
+
+\item \textbf{GTM \& Marketing:} Product positioning, messaging, go-to-market storytelling, user research (12+ interviews), ICP definition, customer journey mapping, market feedback synthesis, competitive analysis
+
+\item \textbf{Community \& Operations:} Event planning and operations (1,000+ attendee events), BD outreach, stakeholder communication, CRM management (1,100+ LP relationships), outreach sequencing
+
+\item \textbf{AI \& Automation:} AI product research, agentic frameworks, frontier AI ecosystem (OpenAI, Anthropic, Microsoft AI, Google), AI prompt engineering, Claude Code / Codex automation
+
+\item \textbf{Tools:} Microsoft Office (PowerPoint, Excel), Figma, Python, R, STATA, Wind, Access, CRM
+
+\end{itemize}
+
+% ============================================================
+%     PROFESSIONAL EXPERIENCE
+% ============================================================
+
+\section{Professional Experience}
+\vspace{3pt}
+\begin{itemize}
+
+\item{\cventry{Jun 2026--Present}{Business Development Associate (Part-Time)}{AI Data Startup}{Remote}{}{\vspace{1pt}
+\begin{itemize}
+    \item Conduct targeted BD outreach to 100+ frontier AI researchers across OpenAI, Microsoft AI, and related labs, supporting relationship-building and data partnership exploration.
+    \item Maintain structured outreach records and personalize messaging based on researcher focus, product relevance, and potential collaboration fit.
+\end{itemize}}}
+
+\vspace{3pt}
+
+\item{\cventry{Jun 2026--Present}{Marketing \& BD Associate}{GenAI Assembling}{San Francisco, CA}{}{\vspace{1pt}
+\begin{itemize}
+    \item Support strategy and operations for a 1,000+ attendee AI community event, designing three audience-specific trails across founders, builders, and creators.
+    \item Map, prioritize, and invite potential speakers and partners; translate event goals into programming structure, guest lists, outreach sequences, and execution timelines.
+    \item Rebuild the English content platform architecture by defining target audiences, content pillars, distribution channels, and research-to-publication workflow.
+\end{itemize}}}
+
+\vspace{3pt}
+
+\item{\cventry{Mar 2026--Apr 2026}{User Researcher}{VidaWheel}{Remote}{}{\vspace{1pt}
+\begin{itemize}
+    \item Conducted 12+ user interviews for an AI-powered MagSafe wellness device, mapping user journeys and defining the ICP of professional women in the U.S.
+    \item Synthesized qualitative insights into positioning recommendations delivered directly to the product and GTM team.
+\end{itemize}}}
+
+\vspace{3pt}
+
+\item{\cventry{Jan 2026--Mar 2026}{Fundraising Consultant}{TerraByte (Pre-seed Embodied AI Infrastructure)}{San Francisco, CA}{}{\vspace{1pt}
+\begin{itemize}
+    \item Led fundraising strategy and application cycles for Y Combinator and UC Berkeley SkyDeck, tailoring technical value propositions and investor-facing pitch materials.
+\end{itemize}}}
+
+\vspace{3pt}
+
+\item{\cventry{Nov 2025--Present}{Content Marketing Manager, AI Research}{Vanta Tech Club}{UC Berkeley}{}{\vspace{1pt}
+\begin{itemize}
+    \item Built end-to-end content marketing system from scratch — owning editorial calendar, social media accounts, contributor management, and publishing workflow.
+    \item Wrote and edited articles across AI research, product, and market themes; managed voice and quality consistency while directing contributors.
+    \item Owned social media distribution and audience segmentation, iterating on formats and cadence based on engagement signals.
+\end{itemize}}}
+
+\vspace{3pt}
+
+\item{\cventry{Oct 2025--May 2026}{Outreach Associate}{Everyone.AI}{San Francisco, CA}{}{\vspace{1pt}
+\begin{itemize}
+    \item Designed and executed outreach plans to drive user engagement, aligning messaging across internal teams, community stakeholders, and target segments.
+    \item Collected and synthesized market feedback to identify adoption drivers, creating feedback loops between users and internal stakeholders.
+\end{itemize}}}
+
+\vspace{3pt}
+
+\item{\cventry{Jan 2025--Jul 2025}{Healthcare Investment Intern}{Yushan Partners}{Shanghai, China}{}{\vspace{1pt}
+\begin{itemize}
+    \item Drafted 2 IC-style investment memos and 10+ diligence briefs for early-stage synthetic biology and healthcare targets, synthesizing market sizing, technology validation, financial projections, and commercialization risks.
+    \item Built financial projection models including demand forecasts, pricing assumptions, revenue build-up, comparable-company benchmarks, and IRR sensitivity analysis.
+    \item Conducted founder interviews, competitor benchmarking, and technical diligence across 20+ startups to identify key investment risks.
+\end{itemize}}}
+
+\vspace{3pt}
+
+\item{\cventry{Jul 2024--Dec 2024}{Healthcare Investment Intern}{Genesis Partners}{Shanghai, China}{}{\vspace{1pt}
+\begin{itemize}
+    \item Supported healthcare and medtech transactions through company research, industry analysis, expert calls, and target screening across 100+ mapped companies.
+    \item Contributed to 10+ business plans and roadshow memoranda, translating technical and commercial information into investor-ready narratives.
+\end{itemize}}}
+
+\vspace{3pt}
+
+\item{\cventry{Jul 2024--Present}{Z Fellow, AI Research \& Content Marketing (Part-Time)}{Z Potential}{Remote}{}{\vspace{1pt}
+\begin{itemize}
+    \item Authored 20+ deep-dive analyses on AI products and companies for a tech media publication; 100k+ cumulative reads.
+    \item Interviewed 10+ AI founders and Silicon Valley investors, turning primary research into original content.
+    \item Built a Claude Code-based automation skill to streamline the content management workflow, reducing manual steps in the research-to-publication pipeline.
+\end{itemize}}}
+
+\vspace{3pt}
+
+\item{\cventry{Jul 2022--Jul 2023}{VC Investor Relations Associate}{Marathon Venture Partners}{Beijing, China}{}{\vspace{1pt}
+\begin{itemize}
+    \item Prepared 10+ government-guided and market fund applications, coordinating legal, financial, commercial, and portfolio information across multiple stakeholders.
+    \item Drafted fund teasers and pitch materials; supported 10+ LP roadshows; maintained a 1,100+ institutional LP CRM.
+    \item Built a post-investment reporting framework covering 70+ portfolio companies; authored a U.S. healthtech case study on Viz.ai.
+\end{itemize}}}
+
+\end{itemize}
+
+% ============================================================
+%     EDUCATION
+% ============================================================
+
+\section{Education}
+\vspace{1pt}
+\begin{itemize}
+
+\item{\cventry{2023--2026}{Master in Business Management}{EDHEC Business School / Sungkyunkwan University / UC Berkeley, Haas School of Business}{France, South Korea, US}{}{\vspace{1pt}
+Global Economy Transformation \& Technology track.
+}}
+
+\vspace{3pt}
+
+\item{\cventry{2019--2023}{BA in International Finance and Market / French}{University of International Business and Economics}{China}{}{\vspace{1pt}
+GPA: 3.6/4.0
+}}
+
+\end{itemize}
+
+% ============================================================
+%     LANGUAGES
+% ============================================================
+
+\section{Languages}
+\vspace{1pt}
+\begin{itemize}
+\item Mandarin (Native), English (Fluent --- IELTS 7.0, GMAT 700), French (Advanced), Korean (A2).
+\end{itemize}
+
+% ============================================================
+%     HONORS AND AWARDS
+% ============================================================
+
+\section{Honors and Awards}
+\vspace{1pt}
+\begin{itemize}
+\item{\textbf{Beijing 2022 Winter Olympics \& Paralympics} -- Volunteer.}
+\item{\textbf{President, Global Exchange \& Experience Center} -- University of International Business and Economics.}
+\end{itemize}
+
+% ============================================================
+%     REFERENCES
+% ============================================================
+
+\section{References}
+\vspace{1pt}
+\begin{itemize}
+\item{Available upon request.}
+\end{itemize}
+
+\end{document}
