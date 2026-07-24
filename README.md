@@ -1,18 +1,18 @@
 <div align="center">
 
-<h1>🤖 ai-job-search</h1>
+<h1>✈️ ApplyPilot</h1>
 
 <p>
   <strong>An end-to-end job application pipeline — powered by Claude Code.</strong><br>
-  Discover roles, rank them against your profile, generate a tailored LaTeX CV and<br>
-  insight-driven cover letter, then auto-submit via Playwright. You stay in control<br>
-  at every step — three mandatory gates before anything is sent.
+  Learns your background first, then discovers roles, ranks them against your profile,<br>
+  generates a tailored LaTeX CV and insight-driven cover letter, and auto-submits via<br>
+  Playwright. You're the pilot — four human gates keep you in command at every step.
 </p>
 
 <p>
   <strong>端到端求职自动化流水线 — 由 Claude Code 驱动。</strong><br>
-  自动发现职位、按你的画像打分、生成定制 LaTeX 简历和洞察驱动的求职信，<br>
-  再通过 Playwright 自动提交申请。全程三个人工审核关卡，你始终掌控节奏。
+  先深度理解你的背景，再发现职位、按画像打分、生成定制 LaTeX 简历和洞察驱动的求职信，<br>
+  最后通过 Playwright 自动提交。你是机长——四个人工关卡让你全程掌控。
 </p>
 
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -127,7 +127,7 @@ Every failure mode hit in production is documented and solved in `.claude/skills
 ## Repo structure
 
 ```
-ai-job-search/
+ApplyPilot/
 ├── CLAUDE.md                    # Your candidate profile — fill in the placeholders
 ├── candidate.json               # Contact info (gitignored — never committed)
 ├── candidate.json.template      # Copy this and fill in your details
@@ -267,7 +267,7 @@ cp candidate.json.template candidate.json
 ## 目录结构
 
 ```
-ai-job-search/
+ApplyPilot/
 ├── CLAUDE.md                    # 候选人档案模板 — 填入你自己的内容
 ├── candidate.json               # 联系方式（已加入 .gitignore，不会提交）
 ├── candidate.json.template      # 复制此文件并填入你的信息
