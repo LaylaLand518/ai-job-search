@@ -33,19 +33,20 @@
 ## How it works
 
 ```
-Discover → Rank → [GATE 1] → Tailor → [GATE 2] → Apply → [GATE 3] → Track
+Load Profile → [GATE 0] → Discover → Rank → [GATE 1] → Tailor → [GATE 2] → Apply → [GATE 3] → Track
 ```
 
 | Phase | What happens |
 |-------|-------------|
-| **1 · Discover** | Scrapes LinkedIn & Handshake for today's postings in your target location |
-| **2 · Rank** | Scores each role 0–100 across sector fit, role fit, AI exposure, location, and salary |
+| **0 · Load Profile** | Reads `candidate.json` + `CLAUDE.md`, checks for unfilled placeholders, synthesizes your full background into a working profile |
+| **1 · Discover** | Searches LinkedIn & Handshake using queries derived from your confirmed profile — sectors, titles, and skills |
+| **2 · Rank** | Scores each role 0–100 across sector fit, role fit, AI exposure, location, and salary — against the profile loaded in Phase 0 |
 | **3 · Tailor** | Writes a 1-page ATS-clean LaTeX CV + insight-driven cover letter per role |
 | **4 · Apply** | Fills and submits the ATS form via Playwright or LinkedIn Easy Apply |
 | **5 · Track** | Logs every outcome to `job_search_tracker.csv` for deduplication and review |
 
 > [!IMPORTANT]
-> **Three gates you must pass through.** The pipeline pauses after ranking, after tailoring, and before final submit. Nothing moves forward without you typing approval. Gates cannot be skipped.
+> **Four gates you must pass through.** Gate 0 confirms your profile before any search begins. Gates 1–3 gate the shortlist, the documents, and the final submit. Nothing moves forward without you typing approval. Gates cannot be skipped.
 
 ---
 
@@ -94,14 +95,14 @@ cp candidate.json.template candidate.json
 # then open CLAUDE.md and fill in your work history, skills, and target sectors
 ```
 
-Or skip this — running `/auto-apply` triggers an interactive Phase 0 that collects everything and writes `candidate.json` for you.
+Or skip this — running `/auto-apply` triggers an interactive Phase 0 that collects everything, writes `candidate.json`, and walks you through confirming your profile before any search begins.
 
 **3. Run**
 
 ```
-/auto-apply              # full pipeline — discover, rank, tailor, apply, track
-/auto-apply --dry-run    # Phase 1+2 only: see what's out there before committing
-/auto-apply --from 3     # resume at tailoring with jobs already ranked
+/auto-apply              # full pipeline — profile check, discover, rank, tailor, apply, track
+/auto-apply --dry-run    # profile check + discover + rank only, no tailoring or submission
+/auto-apply --from 3     # resume at tailoring — still runs Phase 0 to reload the profile
 ```
 
 ---
@@ -172,19 +173,20 @@ Made possible by **[`anthropics/claude-code`](https://github.com/anthropics/clau
 ## 工作原理
 
 ```
-发现职位 → 评分排名 → [关卡 1] → 定制材料 → [关卡 2] → 投递申请 → [关卡 3] → 追踪记录
+加载画像 → [关卡 0] → 发现职位 → 评分排名 → [关卡 1] → 定制材料 → [关卡 2] → 投递申请 → [关卡 3] → 追踪记录
 ```
 
 | 阶段 | 具体内容 |
 |------|---------|
-| **1 · 发现** | 抓取 LinkedIn 和 Handshake 当天目标城市的新职位 |
-| **2 · 评分** | 从行业匹配、岗位契合、AI 曝光度、地点、薪资五个维度打分（满分 100）|
-| **3 · 定制** | 为每个职位生成 1 页 ATS 兼容的 LaTeX 简历 + 洞察驱动的求职信 |
-| **4 · 投递** | 通过 Playwright 或 LinkedIn Easy Apply 自动填写并提交申请表单 |
-| **5 · 追踪** | 将所有结果写入 `job_search_tracker.csv`，用于去重和后续回顾 |
+| **0 · 加载画像** | 读取 `candidate.json` 和 `CLAUDE.md`，检查未填写的占位符，将你的完整背景综合为工作画像 |
+| **1 · 发现职位** | 根据确认后的画像（目标行业、职位名称、核心技能）生成搜索词，抓取 LinkedIn 和 Handshake 当天职位 |
+| **2 · 评分排名** | 基于第 0 阶段加载的画像，从行业匹配、岗位契合、AI 曝光度、地点、薪资五个维度打分（满分 100）|
+| **3 · 定制材料** | 为每个职位生成 1 页 ATS 兼容的 LaTeX 简历 + 洞察驱动的求职信 |
+| **4 · 投递申请** | 通过 Playwright 或 LinkedIn Easy Apply 自动填写并提交申请表单 |
+| **5 · 追踪记录** | 将所有结果写入 `job_search_tracker.csv`，用于去重和后续回顾 |
 
 > [!IMPORTANT]
-> **三个必须经过的人工关卡。** 流水线会在排名完成后、材料生成后、最终提交前各暂停一次。不输入确认，流程不会推进。关卡不可跳过。
+> **四个必须经过的人工关卡。** 关卡 0 在任何搜索开始前确认你的画像；关卡 1–3 分别把守候选名单、申请材料和最终提交。不输入确认，流程不会推进。关卡不可跳过。
 
 ---
 
@@ -233,14 +235,14 @@ cp candidate.json.template candidate.json
 # 再打开 CLAUDE.md，填入工作经历、技能和目标岗位方向
 ```
 
-也可以跳过这一步——直接运行 `/auto-apply`，Phase 0 会交互式引导你完成所有配置并自动生成 `candidate.json`。
+也可以跳过这一步——直接运行 `/auto-apply`，Phase 0 会交互式引导你完成所有配置、生成 `candidate.json`，并在任何搜索开始前确认你的画像。
 
 **3. 运行**
 
 ```
-/auto-apply              # 完整流水线 — 发现、排名、定制、投递、追踪
-/auto-apply --dry-run    # 仅执行第 1+2 阶段：先看看有什么职位，不做任何提交
-/auto-apply --from 3     # 从第 3 阶段恢复，使用已排名的职位继续
+/auto-apply              # 完整流水线 — 画像确认、发现、排名、定制、投递、追踪
+/auto-apply --dry-run    # 画像确认 + 发现 + 排名，不进行定制或提交
+/auto-apply --from 3     # 从第 3 阶段恢复，但仍会重新加载画像
 ```
 
 ---
