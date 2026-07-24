@@ -10,14 +10,14 @@ description: >
 
 # Auto-Apply Pipeline
 
-End-to-end job application pipeline. Candidate profile is loaded from `CLAUDE.md`
-and `candidate.json` — never hardcoded in this skill.
+End-to-end job application pipeline. Profile is always loaded and confirmed before
+any job is discovered. All candidate data comes from `CLAUDE.md` and `candidate.json`.
 
 ```
-Phase 0: Onboard   →  [one-time setup only]
-Phase 1: Discover  →  Phase 2: Rank  →  [GATE 1: approve shortlist]
-  →  Phase 3: Tailor  →  [GATE 2: review CV + cover letter]
-  →  Phase 4: Apply   →  [GATE 3: confirm final submit]
+Phase 0: Load Profile  →  [GATE 0: confirm understanding]
+  →  Phase 1: Discover  →  Phase 2: Rank  →  [GATE 1: approve shortlist]
+  →  Phase 3: Tailor    →  [GATE 2: review CV + cover letter]
+  →  Phase 4: Apply     →  [GATE 3: confirm final submit]
   →  Phase 5: Track
 ```
 
@@ -27,42 +27,37 @@ Phase 1: Discover  →  Phase 2: Rank  →  [GATE 1: approve shortlist]
 
 ```
 /auto-apply           — full pipeline, all phases
-/auto-apply --dry-run — Phase 1+2 only: discover + rank, no tailoring or submission
-/auto-apply --from 3  — resume at Phase 3 using jobs already ranked in seen_jobs.json
+/auto-apply --dry-run — Phase 0+1+2 only: profile check + discover + rank, no tailoring or submission
+/auto-apply --from 3  — resume at Phase 3; still runs Phase 0 to reload profile
 ```
 
 ---
 
-## Phase 0: Onboard (first-time setup)
+## Phase 0: Load Profile
 
-Check whether `candidate.json` exists in the repo root.
+**Always runs first — even on `--from 3` restarts.** Never skip this phase.
 
-### If candidate.json EXISTS
-Load it silently. Extract `CANDIDATE` (name, email, phone, linkedin). Also read
-`CLAUDE.md` for full profile (sectors, salary floor, location constraint, deal-breakers,
-behavioral profile). Proceed directly to Phase 1.
+### Step 0.1 — Contact info
 
-### If candidate.json does NOT exist
+Check whether `candidate.json` exists.
 
-Ask the user:
+**If it does NOT exist**, ask the user:
 
-> "Welcome! Before we start, I need your candidate profile. I'll ask a few questions —
-> this only happens once. Answers are saved to `candidate.json` (gitignored)."
+> "Welcome! Before we start, I need your contact details. I'll ask a few questions —
+> answers are saved to `candidate.json` (gitignored, never committed)."
 
-Collect the following, one at a time:
-
+Collect one at a time:
 1. **Full name** (as it should appear on applications)
 2. **Email address**
 3. **Phone number** (format: 1-XXX-XXX-XXXX)
 4. **LinkedIn URL**
 5. **Location** (city, state — e.g. "Berkeley, CA")
 6. **Location constraint** (e.g. "SF/Bay Area only — no relocation")
-7. **Salary floor** (minimum acceptable, e.g. "$60,000/year")
+7. **Salary floor** (minimum, e.g. "$60,000/year")
 8. **Target sectors** in priority order (e.g. "Investment, GTM/Strategy, Content/AI Research")
 9. **Work authorization** ("authorized to work in US" / "need sponsorship")
 
-Then write `candidate.json`:
-
+Write `candidate.json`:
 ```json
 {
   "name": "<collected>",
@@ -77,30 +72,105 @@ Then write `candidate.json`:
 }
 ```
 
-Then ask:
+**If it exists**, load it silently.
 
-> "Now fill in your full work history, skills, and behavioral profile in `CLAUDE.md`
-> (open the file — the placeholders show exactly what's needed). Done? Type 'ready' to continue."
+### Step 0.2 — Read and check CLAUDE.md
 
-Wait for 'ready', then proceed to Phase 1.
+Read the full `CLAUDE.md` file. Scan for unfilled placeholders — any line still
+containing `[YOUR_`, `[TITLE]`, `[DATES]`, `[COMPANY]`, `[SKILL`, `[INTEREST`,
+`[SECTOR`, `[DEALBREAKER`, etc.
+
+**If placeholders remain:**
+
+> "Your CLAUDE.md still has unfilled sections:
+> - [list the specific placeholder lines]
+>
+> Please fill these in — they're needed to match jobs and write accurate CVs.
+> Open CLAUDE.md, complete the placeholders, then type 'ready'."
+
+Wait for 'ready', then re-read CLAUDE.md before continuing.
+
+**If CLAUDE.md is fully filled**, proceed silently to Step 0.3.
+
+### Step 0.3 — Synthesize the profile
+
+Read every section of CLAUDE.md in full. Build a working profile summary covering:
+
+- **Identity**: name, location, language, status, salary floor
+- **Education**: degrees, institutions, tracks
+- **Experience**: all roles with titles, companies, dates — note the most recent and most relevant to target sectors
+- **Skills**: grouped by category; note which are core vs. "familiar with"
+- **Behavioral profile**: archetype, strengths, growth areas, preferred environment
+- **Motivations**: what excites them, what they care about building
+- **Target sectors**: in priority order from candidate.json + CLAUDE.md
+- **Deal-breakers**: hard constraints that automatically disqualify a role
+
+Store this as the active **Candidate Profile** for all downstream phases.
+
+### Step 0.4 — Profile confirmation (GATE 0)
+
+Present the synthesized profile to the user:
+
+```
+## Candidate Profile — confirmed before search
+
+Name:          <name>
+Location:      <city> (<constraint>)
+Salary floor:  <floor>
+Work auth:     <status>
+
+Experience highlight (most recent):
+  • <Role> at <Company> (<dates>) — <1-line summary of what they did>
+  • <Role> at <Company> (<dates>) — <1-line summary>
+  [top 3–4 most relevant roles]
+
+Core skills:   <comma-separated top skills>
+Target sectors (priority order):
+  1. <sector>
+  2. <sector>
+  3. <sector>
+Deal-breakers: <list>
+Strengths:     <list>
+```
+
+Ask:
+
+> "Does this look right? If anything is wrong or missing, tell me now and I'll update
+> the profile before searching. Type 'looks good' to start finding jobs."
+
+Wait for confirmation. If the user corrects anything, update CLAUDE.md or candidate.json
+accordingly, re-synthesize, and show the updated summary before continuing.
+
+Only after the user confirms does Phase 1 begin.
+
+---
 
 ---
 
 ## Phase 1: Discover
 
-### 1.0 Load state
+**Prerequisite: Phase 0 must be complete and profile confirmed before this phase starts.**
+
+### 1.0 Load state and derive search terms
 
 Read `job_scraper/seen_jobs.json` (create with `{"seen": {}}` if missing).
 Read `job_search_tracker.csv` to extract company+title of already-applied roles.
-Read `.claude/skills/job-scraper/search-queries.md` for the query strategy.
-Load location constraint from `candidate.json` → use as the location filter for all searches.
+
+**Derive search queries from the confirmed Candidate Profile (Phase 0):**
+- Use the candidate's target sectors as primary search categories
+- Pull role-level keywords from their most recent titles and core skills
+- Also read `.claude/skills/job-scraper/search-queries.md` for supplemental query ideas
+- Location filter: use `location_constraint` from `candidate.json`
+
+Do not use generic or hardcoded search terms. Every query must be grounded in
+the specific profile confirmed in Phase 0.
 
 ### 1.1 LinkedIn Jobs (Chrome — authenticated session)
 
 Use the `mcp__claude-in-chrome__*` tools with the user's existing logged-in Chrome session.
 
 1. Navigate to LinkedIn Jobs with location filter matching the candidate's target location.
-2. For each priority query in `search-queries.md`, search and capture results.
+2. For each derived query (Priority 1 sector first, then 2, then 3), search and capture results.
 3. Extract: title, company, location, date posted, apply URL.
 4. Scroll once (~20 results per query); do not paginate aggressively.
 5. WebFetch promising listings for full JD, requirements, salary.
@@ -114,12 +184,13 @@ Use the `mcp__claude-in-chrome__*` tools with the user's existing logged-in Chro
 
 1. Navigate to `https://app.joinhandshake.com/stu/postings`
 2. Filters: candidate's target location, Last 24 hours, Full-time.
-3. Same priority query terms. Extract and WebFetch.
+3. Same derived queries. Extract and WebFetch.
 
 ### 1.3 Deduplication
 
 Skip if URL or `company:title` already in `seen_jobs.json` or `job_search_tracker.csv`.
-Skip if location is outside the candidate's location constraint.
+Skip if location is outside the candidate's `location_constraint`.
+Skip immediately if the role matches any deal-breaker from the Candidate Profile.
 
 ### 1.4 Store raw pool
 
@@ -141,44 +212,60 @@ Skip if location is outside the candidate's location constraint.
 
 ## Phase 2: Rank
 
-Score every newly discovered job against the candidate profile in `CLAUDE.md`.
+Score every newly discovered job against the **Candidate Profile synthesized in Phase 0**.
+Do not re-read CLAUDE.md here — use the profile already in context.
 
 ### Scoring rubric (0–100)
 
 | Dimension | Weight | What to assess |
 |-----------|--------|----------------|
-| Sector fit | 30 | Priority sector match from candidate.json target_sectors |
-| Role fit | 30 | Day-to-day responsibilities vs. candidate's experience in CLAUDE.md |
-| AI exposure | 20 | Does the role touch AI products, research, or ecosystem? |
-| Location | 10 | Target city/area = 10; adjacent = 6; remote-ok = 8 |
-| Salary signal | 10 | Disclosed ≥ salary_floor = 10; undisclosed = 5; < salary_floor = 0 |
+| Sector fit | 30 | How well the role's function maps to the candidate's target sectors (priority order matters) |
+| Role fit | 30 | Do the day-to-day responsibilities match the candidate's actual experience and skills? |
+| AI exposure | 20 | Does the role genuinely touch AI products, research, or ecosystem (not just mentions AI)? |
+| Location | 10 | Matches location_constraint = 10; adjacent area = 6; remote-ok = 8; outside constraint = 0 |
+| Salary signal | 10 | Disclosed ≥ salary_floor = 10; undisclosed = 5; disclosed < salary_floor = 0 |
 
 **Apply-type bonus:**
 - LinkedIn Easy Apply or Handshake native: +5
 - External ATS (Greenhouse, Lever, Ashby): 0
 - Workday / Oracle / SuccessFactors: −10 (flag for user)
 
+**Auto-disqualify (score = 0, status: skipped) if:**
+- Location violates `location_constraint` AND role is not remote
+- Salary explicitly disclosed below `salary_floor`
+- Role matches any deal-breaker from the Candidate Profile
+
 **Verdict bands:**
 - Strong (80–100): tailor fully
 - Good (65–79): apply, standard tailoring
-- Borderline (50–64): flag; apply only with user confirmation
-- Weak (<50): skip
+- Borderline (50–64): flag with explanation; apply only with user confirmation
+- Weak (<50): skip with one-line reason
 
-Update `seen_jobs.json` with `rank_score`, `rank_verdict`, `rank_date`, `status: ranked`.
+Update `seen_jobs.json` with `rank_score`, `rank_verdict`, `rank_reason`, `rank_date`, `status: ranked`.
 
 ### Present ranked table
 
 ```
 ## Job Shortlist — YYYY-MM-DD
 
+Found N new jobs: X strong fit, Y good fit, Z borderline, W skipped.
+
 | # | Score | Verdict | Title | Company | Portal | Apply Type | URL |
 |---|-------|---------|-------|---------|--------|------------|-----|
 
-### Highlights (Strong + Good fit)
-For each: 2–3 bullets on fit, risks, and watch-outs.
+### Why these scores?
+For each Strong + Good fit job: 2–3 bullets on what matches, what's a stretch, any red flags.
+For Borderline: explicit note on what's uncertain and what to ask the user.
 ```
 
-**→ GATE 1: Pause. Ask which numbers to pursue. Wait for user response.**
+**→ GATE 1: Pause.**
+
+Ask:
+> "Which numbers do you want to pursue? (e.g. '1 3 4') — or type 'all strong' to take
+> all Strong-fit jobs. Borderline jobs need your explicit go-ahead.
+> Type 'dry-run done' to stop here if this was a discovery-only run."
+
+Wait for the user's response. Do not tailor or apply to anything without explicit approval.
 
 ---
 
@@ -493,3 +580,5 @@ To review:   open job_search_tracker.csv
 9. **CV always uses V2 format.** Base on `cv/main_juicebox_gtm_v2.tex`. Never use moderncv.
 10. **Dry run by default on first use** (empty seen_jobs.json + empty tracker).
 11. **Never hardcode personal data.** All candidate info comes from `candidate.json` and `CLAUDE.md`.
+12. **Profile must be confirmed before any job search.** Phase 0 Gate 0 is mandatory. Never discover or rank jobs with an unconfirmed or placeholder-filled profile.
+13. **Search terms come from the profile, not thin air.** Derive all queries from the candidate's confirmed target sectors, titles, and skills. No generic or assumed keywords.
