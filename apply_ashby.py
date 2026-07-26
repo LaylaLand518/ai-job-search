@@ -34,6 +34,7 @@ CANDIDATE = {
     "email":    _profile["email"],
     "phone":    _profile["phone"],
     "linkedin": _profile.get("linkedin", ""),
+    "location": _profile.get("location", ""),
 }
 
 
@@ -54,28 +55,117 @@ def fill_ashby(url: str, cv_path: str, cover_letter_path: str | None = None):
             headless=False,
             slow_mo=80,
             executable_path=exe,  # None = use managed Chromium
+            args=["--disable-blink-features=AutomationControlled"],
         )
         ctx = browser.new_context()
         page = ctx.new_page()
 
-        print(f"→ Opening {url}")
-        page.goto(url, wait_until="networkidle")
-        page.wait_for_timeout(1500)
+        # Navigate directly to /application sub-page so the form renders immediately
+        app_url = url.rstrip("/")
+        if not app_url.endswith("/application"):
+            app_url += "/application"
+        print(f"→ Opening {app_url}")
+        page.goto(app_url, wait_until="networkidle")
+        page.wait_for_timeout(3000)
 
-        # ── Text fields ──────────────────────────────────────────────────────
-        def fill(placeholder: str, value: str):
-            loc = page.locator(f'input[placeholder="{placeholder}"]').first
-            loc.fill(value)
+        # ── React-safe fill via fiber onChange ───────────────────────────────
+        FIBER_FILL_JS = """
+(id, val) => {
+  const el = document.getElementById(id);
+  if (!el) return 'NOT FOUND';
+  const fiberKey = Object.keys(el).find(k => k.startsWith('__reactFiber') || k.startsWith('__reactInternalInstance'));
+  if (!fiberKey) return 'NO FIBER';
+  let fiber = el[fiberKey];
+  while (fiber) {
+    const props = fiber.memoizedProps || fiber.pendingProps;
+    if (props && props.onChange) {
+      const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+      Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, val);
+      props.onChange({ target: el, currentTarget: el, type: 'change', nativeEvent: new Event('change') });
+      return 'OK:' + el.value.slice(0, 30);
+    }
+    fiber = fiber.return;
+  }
+  return 'NO_ONCHANGE';
+}
+"""
 
-        fill("Type here...",        CANDIDATE["name"])
-        fill("hello@example.com...", CANDIDATE["email"])
-        fill("1-415-555-1234...",   CANDIDATE["phone"])
+        def fill_by_label(label_text: str, value: str, input_type: str = "text") -> bool:
+            """Find an input by its associated label and fill it via React fiber."""
+            label = page.locator(f'label:has-text("{label_text}")').first
+            try:
+                label.wait_for(state="visible", timeout=3000)
+                input_id = label.get_attribute("for")
+                if input_id:
+                    result = page.evaluate(FIBER_FILL_JS, [input_id, value])
+                    if result.startswith("OK"):
+                        print(f"  ✓ {label_text} (fiber)")
+                        return True
+            except Exception:
+                pass
+            # Fallback: placeholder-based fill
+            for ph in [label_text, "Type here..."]:
+                try:
+                    loc = page.locator(f'input[placeholder="{ph}"]').first
+                    loc.wait_for(state="visible", timeout=2000)
+                    loc.fill(value)
+                    print(f"  ✓ {label_text} (placeholder fallback)")
+                    return True
+                except Exception:
+                    pass
+            print(f"  ✗ {label_text}: not found")
+            return False
 
-        # LinkedIn is the second "Type here..." input
-        text_inputs = page.locator('input[type="text"]')
-        count = text_inputs.count()
-        if count >= 2:
-            text_inputs.nth(1).fill(CANDIDATE["linkedin"])
+        # ── Text fields — try label-based first, placeholder as fallback ─────
+        # Name field
+        name_filled = (
+            fill_by_label("Name", CANDIDATE["name"]) or
+            fill_by_label("Full Name", CANDIDATE["name"]) or
+            fill_by_label("First Name", CANDIDATE["name"].split()[0])
+        )
+        if not name_filled:
+            # Last resort: first text input
+            try:
+                page.locator('input[type="text"]').first.fill(CANDIDATE["name"])
+                print("  ✓ Name (first text input)")
+            except Exception as e:
+                print(f"  ✗ Name: {e}")
+
+        fill_by_label("Email", CANDIDATE["email"])
+        fill_by_label("Phone", CANDIDATE["phone"]) or fill_by_label("Phone Number", CANDIDATE["phone"])
+
+        # LinkedIn — try label first
+        fill_by_label("LinkedIn", CANDIDATE["linkedin"]) or fill_by_label("LinkedIn Profile", CANDIDATE["linkedin"])
+
+        # Location — typeahead field requires typing + selecting from autocomplete dropdown
+        def fill_location(value: str) -> bool:
+            for label_text in ["Location", "Your location", "Current Location"]:
+                label = page.locator(f'label:has-text("{label_text}")').first
+                try:
+                    label.wait_for(state="visible", timeout=2000)
+                    input_id = label.get_attribute("for")
+                    loc_input = page.locator(f'#{input_id}') if input_id else page.locator('input[placeholder="Start typing..."]').first
+                    loc_input.click()
+                    loc_input.fill("")
+                    loc_input.type(value, delay=60)  # character-by-character to trigger autocomplete
+                    page.wait_for_timeout(1500)
+                    # Click first autocomplete suggestion
+                    option = page.locator('[role="option"]').first
+                    try:
+                        option.wait_for(state="visible", timeout=3000)
+                        option.click()
+                        print(f"  ✓ Location (autocomplete selected)")
+                        return True
+                    except Exception:
+                        # No dropdown — accept typed value as-is
+                        loc_input.press("Tab")
+                        print(f"  ✓ Location (typed, no dropdown)")
+                        return True
+                except Exception:
+                    continue
+            return False
+
+        fill_location(CANDIDATE["location"])
 
         # ── Radio: SF Bay Area → Yes ──────────────────────────────────────
         try:
@@ -126,11 +216,11 @@ def fill_ashby(url: str, cv_path: str, cover_letter_path: str | None = None):
         print("\n" + "="*60)
         print("READY TO SUBMIT — review the form in the browser window.")
         print(f"Gate 3: write 'submit' or 'cancel' to:\n  {gate_file}")
-        print("Waiting up to 5 minutes...")
+        print("Waiting up to 10 minutes...")
         print("="*60)
 
         # Poll for the gate file
-        deadline = time.time() + 300
+        deadline = time.time() + 600
         answer = None
         while time.time() < deadline:
             if gate_file.exists():

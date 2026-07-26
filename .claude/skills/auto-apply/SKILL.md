@@ -68,11 +68,14 @@ Write `candidate.json`:
   "location_constraint": "<collected>",
   "salary_floor": <number>,
   "target_sectors": ["<sector1>", "<sector2>"],
-  "work_authorized": true
+  "work_authorized": true,
+  "needs_sponsorship": true
 }
 ```
 
-**If it exists**, load it silently.
+**If it exists**, load it silently. Check whether `needs_sponsorship` is present; if missing, ask:
+> "Do you currently need visa sponsorship to work in the US? (yes / no)"
+and update the file.
 
 ### Step 0.2 — Read and check CLAUDE.md
 
@@ -144,6 +147,65 @@ accordingly, re-synthesize, and show the updated summary before continuing.
 Only after the user confirms does Phase 1 begin.
 
 ---
+
+### Step 0.5 — Standard Application Q&A
+
+**Run this step only once** — check `candidate.json` for a `standard_qa` key. If it exists and is fully populated, skip silently.
+
+If `standard_qa` is missing or incomplete, tell the user:
+
+> "Before searching, I'll collect your answers to questions that come up on nearly every application. This saves time when forms have extra fields the script can't auto-fill. I'll ask once and save everything to `candidate.json` (gitignored — never committed)."
+
+Ask each question below in sequence (one at a time). Accept freeform answers.
+
+**Group A — Work eligibility (applies to all roles)**
+1. Do you currently need visa sponsorship to work in the US? (yes/no)
+2. Are you authorized to work in the US without sponsorship now, or only with sponsorship?
+
+**Group B — Compensation & logistics**
+3. What is your salary expectation range? (e.g. "$70,000–$90,000")
+4. When could you start if hired today? (notice period / start date)
+5. Are you willing to work in-office or hybrid? (yes/no, or describe preference)
+
+**Group C — Sourcing & discovery**
+6. How do you typically say you heard about a role? (e.g. "LinkedIn", "Company website", "Referral")
+
+**Group D — Online presence**
+7. Do you have a personal website or portfolio URL? (or "none")
+8. Do you have a GitHub profile URL? (or "none")
+
+**Group E — EEO / voluntary disclosures** (explain these are voluntary and used only for compliance forms)
+9. Gender identity (for EEO forms — e.g. "Female", "Male", "Non-binary", "Prefer not to say")
+10. Race/ethnicity (for EEO forms — e.g. "Asian", "Hispanic or Latino", "White", "Prefer not to say")
+11. Veteran status (for EEO forms — e.g. "I am not a protected veteran", "Prefer not to say")
+12. Disability status (for EEO forms — e.g. "No, I do not have a disability", "Prefer not to say")
+
+**Group F — Boilerplate short answers**
+13. In 2–3 sentences, what's your standard answer to "Why are you interested in this role / company?" (a generic version that can be customized per application)
+14. In 1–2 sentences, how do you describe your current work situation? (e.g. "I recently completed my master's degree at UC Berkeley Haas and am currently working part-time at an AI startup while actively exploring full-time opportunities.")
+
+Save answers to `candidate.json` under `standard_qa`:
+
+```json
+"standard_qa": {
+  "needs_sponsorship": true,
+  "work_auth_detail": "<collected>",
+  "salary_expectation": "<collected>",
+  "notice_period": "<collected>",
+  "willing_inoffice": "<collected>",
+  "how_did_you_hear": "<collected>",
+  "website": "<collected or null>",
+  "github": "<collected or null>",
+  "eeo_gender": "<collected>",
+  "eeo_race": "<collected>",
+  "eeo_veteran": "<collected>",
+  "eeo_disability": "<collected>",
+  "why_interested_boilerplate": "<collected>",
+  "current_situation": "<collected>"
+}
+```
+
+When filling application forms in Phase 4, draw on these answers for any non-standard fields before asking the user again.
 
 ---
 
@@ -234,6 +296,7 @@ Do not re-read CLAUDE.md here — use the profile already in context.
 - Location violates `location_constraint` AND role is not remote
 - Salary explicitly disclosed below `salary_floor`
 - Role matches any deal-breaker from the Candidate Profile
+- JD explicitly states the company does **not** sponsor visas AND `needs_sponsorship` is true in `candidate.json` — mark as `skipped: no visa sponsorship` and do not present to user
 
 **Verdict bands:**
 - Strong (80–100): tailor fully
@@ -464,14 +527,25 @@ The script reads `candidate.json` automatically, then:
 a UTF-8 BOM, making the string `\xef\xbb\xbfsubmit` which does not equal `"submit"`.
 
 **React form filling (if extending apply_ashby.py or writing new scripts):**
-Standard DOM `el.value = x` doesn't trigger React's synthetic events. Use:
+Standard DOM `el.value = x` doesn't trigger React's synthetic events. On Ashby, even
+`execCommand('insertText')` fails because the Chrome extension context loses focus.
+The only reliable method is calling React's `onChange` prop directly through the fiber:
 ```javascript
-const nativeInputValueSetter =
-  Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-nativeInputValueSetter.call(el, value);
-el.dispatchEvent(new Event('input', { bubbles: true }));
-el.dispatchEvent(new Event('change', { bubbles: true }));
+const el = document.getElementById(id);
+const fiberKey = Object.keys(el).find(k => k.startsWith('__reactFiber') || k.startsWith('__reactInternalInstance'));
+let fiber = el[fiberKey];
+while (fiber) {
+  const props = fiber.memoizedProps || fiber.pendingProps;
+  if (props?.onChange) {
+    const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+    Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, value);
+    props.onChange({ target: el, currentTarget: el, type: 'change', nativeEvent: new Event('change') });
+    break;
+  }
+  fiber = fiber.return;
+}
 ```
+This directly updates React's internal state — the only approach that survives Ashby's submit validation.
 
 **Radio buttons in React forms:**
 `input[type="radio"].click()` or `form_input(true)` may not register.
@@ -558,7 +632,8 @@ To review:   open job_search_tracker.csv
 | File picker dialog not controllable | Chrome is computer-use read-tier; dialog owned by Chrome | Use Playwright — `set_input_files()` never opens a dialog |
 | CSP blocks localhost HTTP fetch | Ashby's `Content-Security-Policy` header blocks non-CDN origins | Use Playwright — no browser-side fetch needed |
 | Gate file read as `\xef\xbb\xbfsubmit` ≠ `"submit"` | `Out-File -Encoding utf8` adds UTF-8 BOM in PowerShell 5.1 | Use `[System.IO.File]::WriteAllText(path, "submit")` |
-| React form fields appear filled but submit empty | `el.value = x` bypasses React's synthetic event system | Use `nativeInputValueSetter` + `dispatchEvent('input')` and `('change')` |
+| React form fields appear filled but submit "missing entry" | `nativeInputValueSetter` fills DOM but React state stays empty on Ashby | Use `el.focus(); execCommand('selectAll'); execCommand('insertText', false, val)` |
+| Location autocomplete rejects typed value on submit | Ashby location is a geocoder typeahead — needs actual dropdown selection | Type char-by-char (`page.type()` with delay), wait for `[role="option"]`, click first result |
 | Radio button click doesn't register in React | `input.click()` may not trigger React's onChange handler | Click the `<label>` element associated with the radio instead |
 | Playwright `spawn UNKNOWN` on Windows | Managed Chromium blocked (antivirus / permissions) | Script auto-falls back to system Chrome via `executable_path` |
 | `pdftotext` not found | poppler not installed | Skip ATS extraction; verify keywords from visual PDF read instead |

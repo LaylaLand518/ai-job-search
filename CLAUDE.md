@@ -11,53 +11,62 @@ This repo is a job application workspace. Claude acts as a career advisor and ap
 ## Candidate Profile
 
 > **Contact details (name, email, phone, LinkedIn) live in `candidate.json` — never committed to git.**
-> Fill in the rest of this section with your own background. Everything here is the source of truth for CV and cover letter content.
-> First-time setup: run `/auto-apply` — Phase 0 will prompt you to create `candidate.json`.
 
 ### Identity
-- **Name:** [YOUR_FULL_NAME]  ← also in candidate.json
-- **Location:** [YOUR_CITY, STATE] ([YOUR_LOCATION_CONSTRAINT, e.g. "SF/Bay Area only — no relocation"])
-- **Languages:** [YOUR_LANGUAGES]
-- **Status:** [YOUR_STATUS, e.g. "Graduated May 2026, actively job searching"]
-- **Salary floor:** [YOUR_SALARY_FLOOR, e.g. "$60,000/year minimum"]
+- **Name:** Jiaru Liu (Layla)
+- **Location:** Berkeley, CA (SF/Bay Area only — no relocation)
+- **Languages:** Mandarin (Native), English (Fluent — IELTS 7.0, GMAT 700), French (Advanced), Korean (A2)
+- **Status:** Graduated May 2026, actively job searching
+- **Salary floor:** $60,000/year minimum
 
 ### Education
-- **[YOUR_GRADUATE_DEGREE]** ([START]–[END]) — [INSTITUTION(S)]
-  - Track / Specialization: [YOUR_TRACK]
-- **[YOUR_UNDERGRADUATE_DEGREE]** ([START]–[END]) — [INSTITUTION]
-  - GPA: [YOUR_GPA]
+- **Master in Business Management** (2023–2026) — EDHEC Business School / Sungkyunkwan University / UC Berkeley, Haas School of Business (France, South Korea, US)
+  - Track: Global Economy Transformation & Technology
+- **BA in International Finance and Market / French** (2019–2023) — University of International Business and Economics, China
+  - GPA: 3.6/4.0
 
 ### Professional Experience (most recent first)
-- **[TITLE]** ([DATES]) — [COMPANY], [LOCATION]
-- **[TITLE]** ([DATES]) — [COMPANY], [LOCATION]
-- *(add all roles here)*
+- **Business Development Associate** (Jun 2026–Present) — AI Data Startup, Remote
+- **Marketing & BD Associate** (Jun 2026–Present) — GenAI Assembling, San Francisco
+- **User Researcher** (Mar 2026–Apr 2026) — VidaWheel, Remote
+- **Fundraising Consultant** (Jan 2026–Mar 2026) — TerraByte, San Francisco
+- **Content Marketing Manager, AI Research** (Nov 2025–Present) — Vanta Tech Club, UC Berkeley
+- **Outreach Associate** (Oct 2025–May 2026) — Everyone.AI, San Francisco
+- **Field Ambassador** (Oct 2025) — Vera Health, San Francisco
+- **Outreach Team** (Sept 2025–Nov 2025) — AI Investment Summit 2025 @ UC Berkeley
+- **Healthcare Investment Intern** (Jan 2025–Jul 2025) — Yushan Partners, Shanghai
+- **Healthcare Investment Intern** (Jul 2024–Dec 2024) — Genesis Partners, Shanghai
+- **Z Fellow, AI Research & Content Marketing** (Jul 2024–Present) — Z Potential, Remote
+- **VC Investor Relations Associate** (Jul 2022–Jul 2023) — Marathon Venture Partners, Beijing
 
 ### Skills
-- **[Skill category, e.g. Content & Marketing]:** [skills and tools]
-- **[Skill category, e.g. GTM & Research]:** [skills and tools]
-- **[Skill category, e.g. AI & Automation]:** [skills and tools]
-- *(add all skill categories)*
+- **Content & Marketing:** Content strategy, editorial calendar, content systems design, short-form video, social media management, organic growth; Ahrefs, Google Search Console, Google Analytics
+- **GTM & Research:** Product positioning, messaging, GTM storytelling, user research (12+ interviews), ICP definition, customer journey mapping, competitive analysis, community & event marketing
+- **Investment & Finance:** Financial modeling, TAM sizing, market sizing, comparable-company analysis, IC-style investment memos, diligence briefs, founder interviews; familiar with ARR, LTV/CAC, unit economics
+- **AI & Automation:** AI product research, agentic frameworks, frontier AI ecosystem (OpenAI, Anthropic, Google), AI prompt engineering, Claude Code, Codex automation
+- **Tools:** Microsoft Office, Figma, Python, R, STATA, Wind, Access, CRM
 
 ### Behavioral Profile
-- **[YOUR_ARCHETYPE, e.g. "Builder-Analyst"]** — [one-line description]
-- **Strengths:** [YOUR_STRENGTHS]
-- **Growth areas:** [YOUR_GROWTH_AREAS]
-- **Thrives in:** [YOUR_PREFERRED_ENVIRONMENT]
+- **Builder-Analyst** — creates systems and workflows from scratch; combines analytical rigor with high written output
+- **Strengths:** Systems thinking, multi-audience translation, parallel operations, AI ecosystem fluency
+- **Growth areas:** Depth over breadth when targeting focused roles; AI-fluent operator (not software engineer)
+- **Thrives in:** Fast-moving, cross-functional, early-stage environments with output ownership
 
-### What Excites You
-- [INTEREST_1]
-- [INTEREST_2]
-- [INTEREST_3]
+### What Excites Me
+- Learning something new in every role
+- Working at the intersection of AI products, research, and real business problems
+- Building things that didn't exist before
 
 ### Target Sectors (priority order)
-- [SECTOR_1, e.g. Investment (VC, PE, growth equity)]
-- [SECTOR_2, e.g. GTM / Strategy (AI startups)]
-- [SECTOR_3, e.g. Content / AI Research / Editorial]
+- Investment (VC, PE, growth equity, IR)
+- GTM / Strategy (AI startups, tech companies)
+- Content / AI Research / Editorial
 
 ### Deal-breakers
-- [DEALBREAKER_1, e.g. "Roles outside SF/Bay Area"]
-- [DEALBREAKER_2, e.g. "Roles below $60,000/year"]
-- [DEALBREAKER_3, e.g. "No meaningful AI exposure"]
+- Roles outside SF/Bay Area (no relocation, no remote-only for non-SF companies unless the role is genuinely interesting)
+- Roles below $60,000/year
+- No meaningful AI exposure
+- Roles that explicitly state they do not sponsor visas (candidate requires visa sponsorship)
 
 ## Repo Structure
 - `cv/` - LaTeX CV variants
@@ -65,9 +74,7 @@ This repo is a job application workspace. Claude acts as a career advisor and ap
   - `main_juicebox_gtm_v2.tex` — **canonical V2 template** (BlackRock-style, 1-page, ATS-clean) — use this as the base for all new CVs
 - `cover_letters/` - LaTeX cover letters (custom cover.cls template)
 - `candidate.json` - Contact info used by apply scripts (gitignored — never commit)
-- `candidate.json.template` - Template to copy for first-time setup
 - `.claude/skills/` - AI skill definitions for the application workflow
-- `.agents/skills/` - Job search CLI tools
 
 ## Workflow for New Job Applications
 1. User provides a job posting (URL or text)
@@ -116,8 +123,7 @@ Both documents MUST be compiled and visually inspected via the Read tool on the 
 - [ ] **Cover letter bullet font matches body font** - `\lettercontent{}` must not wrap `\begin{itemize}...\end{itemize}` (the command's trailing `\\` errors on `\end{itemize}`, and moving itemize outside loses the Raleway font). Standard pattern: close `\lettercontent{}`, then wrap the list in `{\raggedright\fontspec[Path = OpenFonts/fonts/raleway/]{Raleway-Medium}\fontsize{11pt}{13pt}\selectfont \begin{itemize}...\end{itemize}\par}`
 
 ### ATS & keyword verification (CV)
-ATS parsers read the PDF's embedded text layer, not the rendered page. Extract it with `pdftotext -layout` and verify what a parser sees. `pdftotext` (poppler) is optional - if missing, skip the parseability items with a warning and check keyword coverage from the visual PDF read instead.
-- [ ] CV text layer extracts cleanly - no `(cid:*)` markers, `&#65533;` replacement characters, or text visible in the PDF but absent from the extraction
-- [ ] Email and phone appear as **literal text** in the extraction (icon-glyph noise like `MOBILE-ALT`/`Envelope` is harmless, but a contact detail carried only by an icon or hyperlink is invisible to ATS)
-- [ ] Reading order of the extracted text matches the visual order (single-column stock template is safe; multi-column custom templates are where this breaks)
-- [ ] Posting keywords covered or honestly absent - synonym-only matches tightened to the posting's exact term where truthfully applicable, keywords the profile genuinely supports added to experience bullets, genuine gaps left visible and **never stuffed**
+- [ ] CV text layer extracts cleanly - no `(cid:*)` markers, replacement characters, or text visible in the PDF but absent from the extraction
+- [ ] Email and phone appear as **literal text** in the extraction
+- [ ] Reading order of the extracted text matches the visual order
+- [ ] Posting keywords covered or honestly absent - never stuffed
