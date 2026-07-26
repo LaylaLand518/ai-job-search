@@ -188,7 +188,13 @@ def fill_ashby(url: str, cv_path: str, cover_letter_path: str | None = None):
                 loc_input = page.locator('input[placeholder="Start typing..."]').first
 
             try:
-                loc_input.wait_for(state="visible", timeout=3000)
+                try:
+                    loc_input.wait_for(state="visible", timeout=2000)
+                except Exception:
+                    # label.for may point to a non-existent id (Ashby quirk) —
+                    # fall back to the unique "Start typing..." placeholder
+                    loc_input = page.locator('input[placeholder="Start typing..."]').first
+                    loc_input.wait_for(state="visible", timeout=3000)
                 loc_input.click()
                 loc_input.fill("")
                 # Type the city name char-by-char to trigger geocoder autocomplete
