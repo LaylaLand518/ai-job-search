@@ -193,15 +193,16 @@ def fill_ashby(url: str, cv_path: str, cover_letter_path: str | None = None):
 
         fill_location(CANDIDATE["location"])
 
-        # ── Radio/button questions: click every exact "Yes" option ──────────
+        # ── Yes/No button questions: click every "Yes" button ────────────────
         import re as _re
-        yes_labels = page.locator('label').filter(has_text=_re.compile(r'^\s*Yes\s*$'))
-        n_yes = yes_labels.count()
-        print(f"  Found {n_yes} 'Yes' radio label(s)")
+        # Ashby Yes/No questions use <button> elements (not radio inputs or labels)
+        yes_btns = page.locator('button').filter(has_text=_re.compile(r'^\s*Yes\s*$'))
+        n_yes = yes_btns.count()
+        print(f"  Found {n_yes} 'Yes' button(s)")
         for i in range(n_yes):
             try:
-                yes_labels.nth(i).scroll_into_view_if_needed()
-                yes_labels.nth(i).click()
+                yes_btns.nth(i).scroll_into_view_if_needed()
+                yes_btns.nth(i).click()
                 print(f"  ✓ Yes #{i+1}")
                 page.wait_for_timeout(300)
             except Exception as e:
