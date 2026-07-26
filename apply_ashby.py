@@ -91,28 +91,54 @@ def fill_ashby(url: str, cv_path: str, cover_letter_path: str | None = None):
 """
 
         def fill_by_label(label_text: str, value: str, input_type: str = "text") -> bool:
-            """Find an input by its associated label and fill it via React fiber."""
-            label = page.locator(f'label:has-text("{label_text}")').first
+            """Find an input by its associated label and fill it via React fiber or direct interaction."""
+            import re as _rel
+            # Match label text exactly (ignore trailing * for required fields)
+            label = page.locator('label').filter(
+                has_text=_rel.compile(rf'^\s*{_rel.escape(label_text)}\s*\*?\s*$')
+            ).first
             try:
                 label.wait_for(state="visible", timeout=3000)
-                input_id = label.get_attribute("for")
-                if input_id:
-                    result = page.evaluate(FIBER_FILL_JS, [input_id, value])
-                    if result.startswith("OK"):
-                        print(f"  ✓ {label_text} (fiber)")
-                        return True
             except Exception:
-                pass
-            # Fallback: placeholder-based fill
-            for ph in [label_text, "Type here..."]:
+                # Fallback to substring match
+                label = page.locator(f'label:has-text("{label_text}")').first
                 try:
-                    loc = page.locator(f'input[placeholder="{ph}"]').first
-                    loc.wait_for(state="visible", timeout=2000)
-                    loc.fill(value)
-                    print(f"  ✓ {label_text} (placeholder fallback)")
+                    label.wait_for(state="visible", timeout=2000)
+                except Exception:
+                    print(f"  ✗ {label_text}: label not found")
+                    return False
+
+            input_id = label.get_attribute("for")
+
+            # 1. React fiber fill (preferred — survives submit validation)
+            if input_id:
+                result = page.evaluate(FIBER_FILL_JS, [input_id, value])
+                if result.startswith("OK"):
+                    print(f"  ✓ {label_text} (fiber)")
+                    return True
+
+                # 2. Direct element interaction by id (type char-by-char triggers React onChange)
+                try:
+                    inp = page.locator(f'#{input_id}')
+                    inp.wait_for(state="visible", timeout=2000)
+                    inp.click()
+                    inp.fill(value)
+                    print(f"  ✓ {label_text} (direct id fill)")
                     return True
                 except Exception:
                     pass
+
+            # 3. Label-parent container → descendant input (no generic placeholder fallback)
+            try:
+                inp = page.locator(f'label:has-text("{label_text}")').locator('xpath=..').locator('input, textarea').first
+                inp.wait_for(state="visible", timeout=2000)
+                inp.click()
+                inp.fill(value)
+                print(f"  ✓ {label_text} (parent-container fill)")
+                return True
+            except Exception:
+                pass
+
             print(f"  ✗ {label_text}: not found")
             return False
 
