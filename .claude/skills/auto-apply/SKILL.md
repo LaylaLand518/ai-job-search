@@ -549,12 +549,17 @@ This directly updates React's internal state — the only approach that survives
 
 **Radio buttons in React forms:**
 `input[type="radio"].click()` or `form_input(true)` may not register.
-Click the associated `<label>` element instead:
-```javascript
-const yesLabel = Array.from(document.querySelectorAll('label'))
-  .find(l => l.textContent.trim() === 'Yes');
-if (yesLabel) yesLabel.click();
+Click the associated `<label>` element instead. **Always click ALL "Yes" labels** — Ashby forms often have multiple Yes/No question groups (authorization, sponsorship, location, on-site) and must all be answered:
+```python
+import re as _re
+yes_labels = page.locator('label').filter(has_text=_re.compile(r'^\s*Yes\s*$'))
+n = yes_labels.count()
+for i in range(n):
+    yes_labels.nth(i).scroll_into_view_if_needed()
+    yes_labels.nth(i).click()
+    page.wait_for_timeout(300)
 ```
+`apply_ashby.py` uses this pattern — do NOT revert to `.first` or it will miss remaining radio groups.
 
 **Prerequisite (one-time setup):**
 ```powershell

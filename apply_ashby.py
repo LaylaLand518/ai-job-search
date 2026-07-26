@@ -167,21 +167,19 @@ def fill_ashby(url: str, cv_path: str, cover_letter_path: str | None = None):
 
         fill_location(CANDIDATE["location"])
 
-        # ── Radio: SF Bay Area → Yes ──────────────────────────────────────
-        try:
-            yes_label = page.locator('label', has_text="Yes").first
-            yes_label.click()
-        except Exception:
-            radios = page.locator('input[type="radio"]')
-            if radios.count() > 0:
-                radios.first.click()
-
-        # ── Button: 5 days/week → Yes ─────────────────────────────────────
-        try:
-            yes_btn = page.locator('button', has_text="Yes").first
-            yes_btn.click()
-        except Exception:
-            pass
+        # ── Radio/button questions: click every exact "Yes" option ──────────
+        import re as _re
+        yes_labels = page.locator('label').filter(has_text=_re.compile(r'^\s*Yes\s*$'))
+        n_yes = yes_labels.count()
+        print(f"  Found {n_yes} 'Yes' radio label(s)")
+        for i in range(n_yes):
+            try:
+                yes_labels.nth(i).scroll_into_view_if_needed()
+                yes_labels.nth(i).click()
+                print(f"  ✓ Yes #{i+1}")
+                page.wait_for_timeout(300)
+            except Exception as e:
+                print(f"  ✗ Yes #{i+1}: {e}")
 
         # ── Resume upload (no file picker — direct injection) ─────────────
         # Find the resume file input (second <input type="file"> on page)
