@@ -163,33 +163,47 @@ def fill_ashby(url: str, cv_path: str, cover_letter_path: str | None = None):
         # LinkedIn — try label first
         fill_by_label("LinkedIn", CANDIDATE["linkedin"]) or fill_by_label("LinkedIn Profile", CANDIDATE["linkedin"])
 
-        # Location — typeahead field requires typing + selecting from autocomplete dropdown
+        # Location — typeahead geocoder: type chars slowly, wait for dropdown, click first option
         def fill_location(value: str) -> bool:
-            for label_text in ["Location", "Your location", "Current Location"]:
+            # Find the location input: try common label texts first, then fall back to
+            # the "Start typing..." placeholder (unique to location on Ashby forms)
+            loc_input = None
+            for label_text in [
+                "Where are you currently located?",
+                "Location", "Your location", "Current Location",
+            ]:
                 label = page.locator(f'label:has-text("{label_text}")').first
                 try:
-                    label.wait_for(state="visible", timeout=2000)
+                    label.wait_for(state="visible", timeout=1500)
                     input_id = label.get_attribute("for")
-                    loc_input = page.locator(f'#{input_id}') if input_id else page.locator('input[placeholder="Start typing..."]').first
-                    loc_input.click()
-                    loc_input.fill("")
-                    loc_input.type(value, delay=60)  # character-by-character to trigger autocomplete
-                    page.wait_for_timeout(1500)
-                    # Click first autocomplete suggestion
-                    option = page.locator('[role="option"]').first
-                    try:
-                        option.wait_for(state="visible", timeout=3000)
-                        option.click()
-                        print(f"  ✓ Location (autocomplete selected)")
-                        return True
-                    except Exception:
-                        # No dropdown — accept typed value as-is
-                        loc_input.press("Tab")
-                        print(f"  ✓ Location (typed, no dropdown)")
-                        return True
+                    if input_id:
+                        loc_input = page.locator(f'#{input_id}')
+                    else:
+                        loc_input = label.locator('xpath=..').locator('input').first
+                    break
                 except Exception:
                     continue
-            return False
+            if loc_input is None:
+                # Last resort: the location typeahead is the only "Start typing..." input
+                loc_input = page.locator('input[placeholder="Start typing..."]').first
+
+            try:
+                loc_input.wait_for(state="visible", timeout=3000)
+                loc_input.click()
+                loc_input.fill("")
+                # Type the city name char-by-char to trigger geocoder autocomplete
+                search_term = value.split(",")[0].strip()  # e.g. "Berkeley" from "Berkeley, CA"
+                loc_input.type(search_term, delay=80)
+                page.wait_for_timeout(2000)  # wait for autocomplete results
+                option = page.locator('[role="option"]').first
+                option.wait_for(state="visible", timeout=4000)
+                option.scroll_into_view_if_needed()
+                option.click()
+                print(f"  ✓ Location (autocomplete: '{search_term}' → selected)")
+                return True
+            except Exception as e:
+                print(f"  ✗ Location: {e}")
+                return False
 
         fill_location(CANDIDATE["location"])
 
