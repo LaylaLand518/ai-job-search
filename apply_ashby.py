@@ -44,20 +44,33 @@ def fill_ashby(url: str, cv_path: str, cover_letter_path: str | None = None):
         sys.exit(f"CV not found: {cv_path}")
 
     with sync_playwright() as p:
-        # Use installed Chrome if Playwright's managed Chromium can't launch
         import os
-        chrome_paths = [
-            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
-        ]
-        exe = next((c for c in chrome_paths if os.path.exists(c)), None)
-        browser = p.chromium.launch(
-            headless=False,
-            slow_mo=80,
-            executable_path=exe,  # None = use managed Chromium
-            args=["--disable-blink-features=AutomationControlled"],
-        )
-        ctx = browser.new_context()
+        # Use real Chrome profile so Ashby sees your authentic browser fingerprint/cookies.
+        # Chrome MUST be fully closed before running, otherwise the profile is locked.
+        user_data_dir = os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\User Data")
+        try:
+            ctx = p.chromium.launch_persistent_context(
+                user_data_dir=user_data_dir,
+                channel="chrome",
+                headless=False,
+                slow_mo=120,
+                args=["--disable-blink-features=AutomationControlled"],
+            )
+            print("→ Using real Chrome profile (anti-bot evasion)")
+        except Exception as launch_err:
+            print(f"⚠  Could not open Chrome profile ({launch_err})")
+            print("   Is Chrome still open? Close it and retry.")
+            print("   Falling back to fresh browser (may trigger bot detection).")
+            chrome_paths = [
+                r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+                r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+            ]
+            exe = next((c for c in chrome_paths if os.path.exists(c)), None)
+            _browser = p.chromium.launch(
+                headless=False, slow_mo=120, executable_path=exe,
+                args=["--disable-blink-features=AutomationControlled"],
+            )
+            ctx = _browser.new_context()
         page = ctx.new_page()
 
         # Navigate directly to /application sub-page so the form renders immediately
@@ -293,7 +306,7 @@ def fill_ashby(url: str, cv_path: str, cover_letter_path: str | None = None):
         else:
             print("✗ Submission cancelled.")
 
-        browser.close()
+        ctx.close()
 
 
 def main():
